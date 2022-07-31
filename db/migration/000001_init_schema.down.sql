@@ -1,0 +1,14 @@
+DROP TABLE IF EXITS found;
+DROP TABLE IF EXITS lost;
+DROP TABLE IF EXITS match;
+DROP TABLE IF EXITS location_wide;
+DROP TABLE IF EXITS location_narrow;
+DROP TABLE IF EXITS type_wide;
+DROP TABLE IF EXITS type_narrow;
+DROP TABLE IF EXITS manager;
+DROP TABLE IF EXITS user;
+
+DROP TYPE IF EXITS permission;
+DROP TYPE IF EXITS campus;
+DROP TYPE IF EXITS location_status;
+DROP TYPE IF EXITS time_bucket;
