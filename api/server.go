@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"log"
+	"lost_found/middleware"
 	"lost_found/token"
 	"lost_found/util"
 
@@ -18,11 +19,10 @@ type Server struct {
 	router     *gin.Engine
 }
 
-//NewServer creates a new HTTP server and setup routing
 func NewServer(config util.Config, store Store) (*Server, error) {
 	tokenMaker, err := token.NewJWTMaker(config.TokenSymmetricKey)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create token maker: %w", err)
+		return nil, fmt.Errorf("failed to create token maker: %w", err)
 	}
 	server := &Server{
 		config:     config,
@@ -40,22 +40,60 @@ func NewServer(config util.Config, store Store) (*Server, error) {
 }
 
 func (server *Server) setupRouter() {
-	// router := gin.Default()
+	router := gin.Default()
 
-	// router.POST("/users", server.createUser)
-	// router.POST("/users/login", server.loginUser)
+	router.POST("/users/login", server.loginUser)
 
-	// authRoutes := router.Group("/").Use(authMiddleware(server.tokenMaker))
+	//普通用户使用功能
+	authRoutes := router.Group("/").Use(middleware.AuthMiddleware(server.tokenMaker))
+	//用户账户
+	authRoutes.GET("/users/:id", server.getUser)
+	authRoutes.DELETE("/users/:id", server.deleteUser)
+	authRoutes.PATCH("/users/:id", server.updateUser)
+	//位置和类型
+	authRoutes.GET("/locations", server.listLocation)
+	authRoutes.GET("/types", server.listType)
+	//拾取物品
+	authRoutes.GET("/founds", server.listFound)
+	authRoutes.GET("/founds/:id", server.getFound)
+	authRoutes.POST("/founds/add", server.addFound)
+	authRoutes.DELETE("/founds/delete/:id", server.deleteFound) //只能删除自己发布的拾取物
+	//遗失物品
+	authRoutes.GET("/losts", server.listLost)
+	authRoutes.GET("/losts/:id", server.getLost)
+	authRoutes.POST("/losts/add", server.addLost)
+	authRoutes.DELETE("/losts/delete/:id", server.deleteLost) //只能删除自己的发布的遗失物
+	//归还物品
+	authRoutes.GET("/matches", server.listMatch) //自己遗失或拾取的已归还物品
 
-	// authRoutes.POST("/accounts", server.createAccount)
-	// authRoutes.GET("/accounts/:id", server.getAccount)
-	// authRoutes.DELETE("/accounts/:id", server.deleteAccount)
-	// authRoutes.PATCH("/accounts/:id", server.updateAccount)
-	// authRoutes.GET("/accounts", server.listAccount)
+	//管理员系统
+	manRoutes := router.Group("/manager").Use(middleware.ManagerMiddleware(server.tokenMaker))
+	//用户账户
+	manRoutes.POST("/users/add", server.addUser)
+	//位置和类型
+	manRoutes.GET("/locations", server.listLocation)
+	manRoutes.POST("/locations/add", server.addLocation)
+	manRoutes.DELETE("/locations/delete/:id", server.deleteLocation)
+	manRoutes.GET("/types", server.listType)
+	manRoutes.POST("/types/add", server.addType)
+	manRoutes.POST("/types/delete/:id", server.deleteType)
+	//拾取物品
+	manRoutes.GET("/founds", server.listFound)
+	manRoutes.GET("/founds/:id", server.getFound)
+	manRoutes.POST("/founds/add", server.addFound)
+	manRoutes.DELETE("/founds/delete/:id", server.deleteFound)
+	//遗失物品
+	manRoutes.GET("/losts", server.listLost)
+	manRoutes.GET("/losts/:id", server.getLost)
+	manRoutes.POST("/losts/add", server.addLost)
+	manRoutes.DELETE("/losts/delete/:id", server.deleteLost)
+	//归还物品
+	manRoutes.GET("/matches", server.listMatch)
+	manRoutes.GET("/matches/:id", server.getMatch)
+	manRoutes.POST("/matches/add", server.addMatch)
+	manRoutes.DELETE("/matches/delete/:id", server.deleteMatch)
 
-	// authRoutes.POST("/transfers", server.createTransfer)
-
-	// server.router = router
+	server.router = router
 }
 
 func (server *Server) Start(address string) error {

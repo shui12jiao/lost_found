@@ -27,6 +27,6 @@ func RandomString(length int) string {
 }
 
 //这里使用的为微信openid，长度为28
-func RandomOpenid() string {
+func RandomSessionid() string {
 	return RandomString(28)
 }

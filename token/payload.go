@@ -9,7 +9,7 @@ import (
 
 type Payload struct {
 	ID        uuid.UUID `json:"id"`
-	Openid    string    `json:"openid"`
+	SessionId string    `json:"session_id"`
 	IssuedAt  time.Time `json:"issued_at"`
 	ExpiredAt time.Time `json:"expired_at"`
 }
@@ -19,7 +19,7 @@ var (
 	ErrInvalidToken = errors.New("token is invalid")
 )
 
-func NewPayload(openid string, duration time.Duration) (*Payload, error) {
+func NewPayload(session_id string, duration time.Duration) (*Payload, error) {
 	tokenID, err := uuid.NewRandom()
 	if err != nil {
 		return nil, err
@@ -27,7 +27,7 @@ func NewPayload(openid string, duration time.Duration) (*Payload, error) {
 
 	payload := &Payload{
 		ID:        tokenID,
-		Openid:    openid,
+		SessionId: session_id,
 		IssuedAt:  time.Now(),
 		ExpiredAt: time.Now().Add(duration),
 	}
