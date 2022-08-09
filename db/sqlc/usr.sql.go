@@ -13,39 +13,57 @@ const addUsr = `-- name: AddUsr :one
 INSERT INTO usr (
     openid,
     name,
+    phone,
     student_id,
+    avatar_url,
     avatar
 ) VALUES (
-  $1, $2, $3, $4
-) RETURNING openid, name, student_id, avatar
+  $1, $2, $3, $4, $5, $6
+) RETURNING openid, name, phone, student_id, avatar_url, avatar
 `
 
 type AddUsrParams struct {
 	Openid    string `json:"openid"`
 	Name      string `json:"name"`
+	Phone     string `json:"phone"`
 	StudentID string `json:"studentID"`
-	Avatar    string `json:"avatar"`
+	AvatarUrl string `json:"avatarUrl"`
+	Avatar    []byte `json:"avatar"`
 }
 
 func (q *Queries) AddUsr(ctx context.Context, arg AddUsrParams) (Usr, error) {
 	row := q.db.QueryRowContext(ctx, addUsr,
 		arg.Openid,
 		arg.Name,
+		arg.Phone,
 		arg.StudentID,
+		arg.AvatarUrl,
 		arg.Avatar,
 	)
 	var i Usr
 	err := row.Scan(
 		&i.Openid,
 		&i.Name,
+		&i.Phone,
 		&i.StudentID,
+		&i.AvatarUrl,
 		&i.Avatar,
 	)
 	return i, err
 }
 
+const deleteUsr = `-- name: DeleteUsr :exec
+DELETE FROM usr
+WHERE openid = $1
+`
+
+func (q *Queries) DeleteUsr(ctx context.Context, openid string) error {
+	_, err := q.db.ExecContext(ctx, deleteUsr, openid)
+	return err
+}
+
 const getUsr = `-- name: GetUsr :one
-SELECT openid, name, student_id, avatar FROM usr
+SELECT openid, name, phone, student_id, avatar_url, avatar FROM usr
 WHERE openid  = $1 LIMIT 1
 `
 
@@ -55,7 +73,105 @@ func (q *Queries) GetUsr(ctx context.Context, openid string) (Usr, error) {
 	err := row.Scan(
 		&i.Openid,
 		&i.Name,
+		&i.Phone,
 		&i.StudentID,
+		&i.AvatarUrl,
+		&i.Avatar,
+	)
+	return i, err
+}
+
+const updateUsr = `-- name: UpdateUsr :one
+UPDATE usr
+SET name = $2,
+    phone = $3,
+    student_id = $4,
+    avatar_url = $5,
+    avatar = $6
+WHERE openid = $1
+RETURNING openid, name, phone, student_id, avatar_url, avatar
+`
+
+type UpdateUsrParams struct {
+	Openid    string `json:"openid"`
+	Name      string `json:"name"`
+	Phone     string `json:"phone"`
+	StudentID string `json:"studentID"`
+	AvatarUrl string `json:"avatarUrl"`
+	Avatar    []byte `json:"avatar"`
+}
+
+func (q *Queries) UpdateUsr(ctx context.Context, arg UpdateUsrParams) (Usr, error) {
+	row := q.db.QueryRowContext(ctx, updateUsr,
+		arg.Openid,
+		arg.Name,
+		arg.Phone,
+		arg.StudentID,
+		arg.AvatarUrl,
+		arg.Avatar,
+	)
+	var i Usr
+	err := row.Scan(
+		&i.Openid,
+		&i.Name,
+		&i.Phone,
+		&i.StudentID,
+		&i.AvatarUrl,
+		&i.Avatar,
+	)
+	return i, err
+}
+
+const updateUsrAvatar = `-- name: UpdateUsrAvatar :one
+UPDATE usr
+SET avatar_url = $2,
+    avatar = $3
+WHERE openid = $1
+RETURNING openid, name, phone, student_id, avatar_url, avatar
+`
+
+type UpdateUsrAvatarParams struct {
+	Openid    string `json:"openid"`
+	AvatarUrl string `json:"avatarUrl"`
+	Avatar    []byte `json:"avatar"`
+}
+
+func (q *Queries) UpdateUsrAvatar(ctx context.Context, arg UpdateUsrAvatarParams) (Usr, error) {
+	row := q.db.QueryRowContext(ctx, updateUsrAvatar, arg.Openid, arg.AvatarUrl, arg.Avatar)
+	var i Usr
+	err := row.Scan(
+		&i.Openid,
+		&i.Name,
+		&i.Phone,
+		&i.StudentID,
+		&i.AvatarUrl,
+		&i.Avatar,
+	)
+	return i, err
+}
+
+const updateUsrName = `-- name: UpdateUsrName :one
+UPDATE usr
+SET name = $2
+
+WHERE openid = $1
+RETURNING openid, name, phone, student_id, avatar_url, avatar
+`
+
+type UpdateUsrNameParams struct {
+	Openid string `json:"openid"`
+	Name   string `json:"name"`
+}
+
+func (q *Queries) UpdateUsrName(ctx context.Context, arg UpdateUsrNameParams) (Usr, error) {
+	row := q.db.QueryRowContext(ctx, updateUsrName, arg.Openid, arg.Name)
+	var i Usr
+	err := row.Scan(
+		&i.Openid,
+		&i.Name,
+		&i.Phone,
+		&i.StudentID,
+		&i.AvatarUrl,
 		&i.Avatar,
 	)
 	return i, err

@@ -128,6 +128,35 @@ func (q *Queries) ListLocationNarrow(ctx context.Context) ([]LocationNarrow, err
 	return items, nil
 }
 
+const listLocationNarrowByWide = `-- name: ListLocationNarrowByWide :many
+SELECT id, name, wide_id FROM location_narrow
+WHERE wide_id = $1
+ORDER BY id
+`
+
+func (q *Queries) ListLocationNarrowByWide(ctx context.Context, wideID int16) ([]LocationNarrow, error) {
+	rows, err := q.db.QueryContext(ctx, listLocationNarrowByWide, wideID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []LocationNarrow{}
+	for rows.Next() {
+		var i LocationNarrow
+		if err := rows.Scan(&i.ID, &i.Name, &i.WideID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listLocationWide = `-- name: ListLocationWide :many
 SELECT id, name, campus FROM location_wide
 `

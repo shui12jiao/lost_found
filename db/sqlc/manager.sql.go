@@ -52,6 +52,18 @@ func (q *Queries) GetManager(ctx context.Context, id int16) (Manager, error) {
 	return i, err
 }
 
+const getManagerByOpenid = `-- name: GetManagerByOpenid :one
+SELECT id, usr_openid, permission FROM manager
+WHERE usr_openid = $1 LIMIT 1
+`
+
+func (q *Queries) GetManagerByOpenid(ctx context.Context, usrOpenid string) (Manager, error) {
+	row := q.db.QueryRowContext(ctx, getManagerByOpenid, usrOpenid)
+	var i Manager
+	err := row.Scan(&i.ID, &i.UsrOpenid, &i.Permission)
+	return i, err
+}
+
 const listManager = `-- name: ListManager :many
 SELECT id, usr_openid, permission FROM manager
 `

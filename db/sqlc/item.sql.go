@@ -348,6 +348,58 @@ func (q *Queries) ListFound(ctx context.Context, arg ListFoundParams) ([]Found, 
 	return items, nil
 }
 
+const listFoundByPicker = `-- name: ListFoundByPicker :many
+SELECT id, create_at, picker_openid, found_date, time_bucket, location_id, location_info, location_status, type_id, item_info, image, image_key, owner_info, addtional_info FROM found
+WHERE picker_openid = $1
+ORDER BY id
+LIMIT $2
+OFFSET $3
+`
+
+type ListFoundByPickerParams struct {
+	PickerOpenid string `json:"pickerOpenid"`
+	Limit        int32  `json:"limit"`
+	Offset       int32  `json:"offset"`
+}
+
+func (q *Queries) ListFoundByPicker(ctx context.Context, arg ListFoundByPickerParams) ([]Found, error) {
+	rows, err := q.db.QueryContext(ctx, listFoundByPicker, arg.PickerOpenid, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Found{}
+	for rows.Next() {
+		var i Found
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreateAt,
+			&i.PickerOpenid,
+			&i.FoundDate,
+			&i.TimeBucket,
+			&i.LocationID,
+			&i.LocationInfo,
+			&i.LocationStatus,
+			&i.TypeID,
+			&i.ItemInfo,
+			&i.Image,
+			&i.ImageKey,
+			&i.OwnerInfo,
+			&i.AddtionalInfo,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listLost = `-- name: ListLost :many
 SELECT id, create_at, owner_openid, lost_date, time_bucket, type_id, location_id, location_id1, location_id2 FROM lost
 ORDER BY id
@@ -393,6 +445,53 @@ func (q *Queries) ListLost(ctx context.Context, arg ListLostParams) ([]Lost, err
 	return items, nil
 }
 
+const listLostByOwner = `-- name: ListLostByOwner :many
+SELECT id, create_at, owner_openid, lost_date, time_bucket, type_id, location_id, location_id1, location_id2 FROM lost
+WHERE owner_openid = $1
+ORDER BY id
+LIMIT $2
+OFFSET $3
+`
+
+type ListLostByOwnerParams struct {
+	OwnerOpenid string `json:"ownerOpenid"`
+	Limit       int32  `json:"limit"`
+	Offset      int32  `json:"offset"`
+}
+
+func (q *Queries) ListLostByOwner(ctx context.Context, arg ListLostByOwnerParams) ([]Lost, error) {
+	rows, err := q.db.QueryContext(ctx, listLostByOwner, arg.OwnerOpenid, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Lost{}
+	for rows.Next() {
+		var i Lost
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreateAt,
+			&i.OwnerOpenid,
+			&i.LostDate,
+			&i.TimeBucket,
+			&i.TypeID,
+			&i.LocationID,
+			&i.LocationId1,
+			&i.LocationId2,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listMatch = `-- name: ListMatch :many
 SELECT id, create_at, picker_openid, owner_openid, found_date, lost_date, type_id, item_info, image, image_key, comment FROM match
 ORDER BY id
@@ -407,6 +506,104 @@ type ListMatchParams struct {
 
 func (q *Queries) ListMatch(ctx context.Context, arg ListMatchParams) ([]Match, error) {
 	rows, err := q.db.QueryContext(ctx, listMatch, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Match{}
+	for rows.Next() {
+		var i Match
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreateAt,
+			&i.PickerOpenid,
+			&i.OwnerOpenid,
+			&i.FoundDate,
+			&i.LostDate,
+			&i.TypeID,
+			&i.ItemInfo,
+			&i.Image,
+			&i.ImageKey,
+			&i.Comment,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listMatchByOwner = `-- name: ListMatchByOwner :many
+SELECT id, create_at, picker_openid, owner_openid, found_date, lost_date, type_id, item_info, image, image_key, comment FROM match
+WHERE owner_openid = $1
+ORDER BY id
+LIMIT $2
+OFFSET $3
+`
+
+type ListMatchByOwnerParams struct {
+	OwnerOpenid string `json:"ownerOpenid"`
+	Limit       int32  `json:"limit"`
+	Offset      int32  `json:"offset"`
+}
+
+func (q *Queries) ListMatchByOwner(ctx context.Context, arg ListMatchByOwnerParams) ([]Match, error) {
+	rows, err := q.db.QueryContext(ctx, listMatchByOwner, arg.OwnerOpenid, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Match{}
+	for rows.Next() {
+		var i Match
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreateAt,
+			&i.PickerOpenid,
+			&i.OwnerOpenid,
+			&i.FoundDate,
+			&i.LostDate,
+			&i.TypeID,
+			&i.ItemInfo,
+			&i.Image,
+			&i.ImageKey,
+			&i.Comment,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listMatchByPicker = `-- name: ListMatchByPicker :many
+SELECT id, create_at, picker_openid, owner_openid, found_date, lost_date, type_id, item_info, image, image_key, comment FROM match
+WHERE picker_openid = $1
+ORDER BY id
+LIMIT $2
+OFFSET $3
+`
+
+type ListMatchByPickerParams struct {
+	PickerOpenid string `json:"pickerOpenid"`
+	Limit        int32  `json:"limit"`
+	Offset       int32  `json:"offset"`
+}
+
+func (q *Queries) ListMatchByPicker(ctx context.Context, arg ListMatchByPickerParams) ([]Match, error) {
+	rows, err := q.db.QueryContext(ctx, listMatchByPicker, arg.PickerOpenid, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}

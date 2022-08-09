@@ -10,7 +10,7 @@ import (
 
 func TestSession(t *testing.T) {
 	lifetime := time.Second * 3
-	manager := NewManager("test", NewMemorySessionStore(), lifetime)
+	manager := NewSessionManager("test", NewMemorySessionStore(), lifetime)
 
 	issuedAt := time.Now()
 	openid := util.RandomString(28)

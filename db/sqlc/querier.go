@@ -26,23 +26,33 @@ type Querier interface {
 	DeleteMatch(ctx context.Context, id int32) error
 	DeleteTypeNarrow(ctx context.Context, id int16) error
 	DeleteTypeWide(ctx context.Context, id int16) error
+	DeleteUsr(ctx context.Context, openid string) error
 	GetFound(ctx context.Context, id int32) (Found, error)
 	GetLocationNarrow(ctx context.Context, id int16) (LocationNarrow, error)
 	GetLocationWide(ctx context.Context, id int16) (LocationWide, error)
 	GetLost(ctx context.Context, id int32) (Lost, error)
 	GetManager(ctx context.Context, id int16) (Manager, error)
+	GetManagerByOpenid(ctx context.Context, usrOpenid string) (Manager, error)
 	GetMatch(ctx context.Context, id int32) (Match, error)
 	GetTypeNarrow(ctx context.Context, id int16) (TypeNarrow, error)
 	GetTypeWide(ctx context.Context, id int16) (TypeWide, error)
 	GetUsr(ctx context.Context, openid string) (Usr, error)
 	ListFound(ctx context.Context, arg ListFoundParams) ([]Found, error)
+	ListFoundByPicker(ctx context.Context, arg ListFoundByPickerParams) ([]Found, error)
 	ListLocationNarrow(ctx context.Context) ([]LocationNarrow, error)
+	ListLocationNarrowByWide(ctx context.Context, wideID int16) ([]LocationNarrow, error)
 	ListLocationWide(ctx context.Context) ([]LocationWide, error)
 	ListLost(ctx context.Context, arg ListLostParams) ([]Lost, error)
+	ListLostByOwner(ctx context.Context, arg ListLostByOwnerParams) ([]Lost, error)
 	ListManager(ctx context.Context) ([]Manager, error)
 	ListMatch(ctx context.Context, arg ListMatchParams) ([]Match, error)
+	ListMatchByOwner(ctx context.Context, arg ListMatchByOwnerParams) ([]Match, error)
+	ListMatchByPicker(ctx context.Context, arg ListMatchByPickerParams) ([]Match, error)
 	ListTypeNarrow(ctx context.Context) ([]TypeNarrow, error)
 	ListTypeWide(ctx context.Context) ([]TypeWide, error)
+	UpdateUsr(ctx context.Context, arg UpdateUsrParams) (Usr, error)
+	UpdateUsrAvatar(ctx context.Context, arg UpdateUsrAvatarParams) (Usr, error)
+	UpdateUsrName(ctx context.Context, arg UpdateUsrNameParams) (Usr, error)
 }
 
 var _ Querier = (*Queries)(nil)

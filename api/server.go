@@ -3,53 +3,73 @@ package api
 import (
 	"fmt"
 	"log"
+	"lost_found/db/sqlc"
 	"lost_found/middleware"
-	"lost_found/token"
+	"lost_found/middleware/session"
+	"lost_found/middleware/token"
+	"lost_found/service"
 	"lost_found/util"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
+	"github.com/silenceper/wechat/v2/miniprogram"
+)
+
+const (
+	cookieName = middleware.CookieName
+	appid      = "appid"
+	secret     = "secret"
+	domain     = "localhost:8080"
 )
 
 type Server struct {
-	config     util.Config
-	store      Store
-	tokenMaker token.Maker
-	router     *gin.Engine
+	config         util.Config
+	store          sqlc.Store
+	tokenMaker     token.Maker
+	sessionManager *session.Manager
+	wxMini         *miniprogram.MiniProgram
+	router         *gin.Engine
 }
 
-func NewServer(config util.Config, store Store) (*Server, error) {
+func NewServer(config util.Config, store sqlc.Store) (*Server, error) {
+	//令牌maker
 	tokenMaker, err := token.NewJWTMaker(config.TokenSymmetricKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create token maker: %w", err)
 	}
-	server := &Server{
-		config:     config,
-		store:      store,
-		tokenMaker: tokenMaker,
-	}
+	//session会话管理
+	sessionManager := session.NewSessionManager(cookieName, session.NewMemorySessionStore(), config.SessionLifeTime)
 
+	server := &Server{
+		config:         config,
+		store:          store,
+		tokenMaker:     tokenMaker,
+		sessionManager: sessionManager,
+		wxMini:         service.GetWechatMiniProgram(),
+		router:         gin.Default(),
+	}
+	//设置验证器
 	if _, ok := binding.Validator.Engine().(*validator.Validate); !ok {
 		log.Fatal("failed to init validator")
 	}
-
+	//开始路由
 	server.setupRouter()
 
 	return server, nil
 }
 
 func (server *Server) setupRouter() {
-	router := gin.Default()
+	router := server.router
 
 	router.POST("/users/login", server.loginUser)
 
-	//普通用户使用功能
-	authRoutes := router.Group("/").Use(middleware.AuthMiddleware(server.tokenMaker))
+	//--普通用户使用功能--
+	authRoutes := router.Group("/").Use(middleware.AuthSessionMiddleware(server.sessionManager))
 	//用户账户
-	authRoutes.GET("/users/:id", server.getUser)
-	authRoutes.DELETE("/users/:id", server.deleteUser)
-	authRoutes.PATCH("/users/:id", server.updateUser)
+	authRoutes.GET("/users/info", server.getUserSelf)
+	authRoutes.DELETE("/users", server.deleteUserSelf)
+	authRoutes.PATCH("/users", server.updateUserSelf)
 	//位置和类型
 	authRoutes.GET("/locations", server.listLocation)
 	authRoutes.GET("/types", server.listType)
@@ -66,10 +86,13 @@ func (server *Server) setupRouter() {
 	//归还物品
 	authRoutes.GET("/matches", server.listMatch) //自己遗失或拾取的已归还物品
 
-	//管理员系统
-	manRoutes := router.Group("/manager").Use(middleware.ManagerMiddleware(server.tokenMaker))
+	//--管理员系统--
+	manRoutes := router.Group("/manager").Use(middleware.ManagerMiddleware(server.sessionManager, server.store))
 	//用户账户
 	manRoutes.POST("/users/add", server.addUser)
+	manRoutes.GET("/users/:id", server.getUser)
+	manRoutes.DELETE("/users/:id", server.deleteUser)
+	manRoutes.PATCH("/users/:id", server.updateUser)
 	//位置和类型
 	manRoutes.GET("/locations", server.listLocation)
 	manRoutes.POST("/locations/add", server.addLocation)
@@ -92,8 +115,6 @@ func (server *Server) setupRouter() {
 	manRoutes.GET("/matches/:id", server.getMatch)
 	manRoutes.POST("/matches/add", server.addMatch)
 	manRoutes.DELETE("/matches/delete/:id", server.deleteMatch)
-
-	server.router = router
 }
 
 func (server *Server) Start(address string) error {

@@ -29,6 +29,13 @@ ORDER BY id
 LIMIT $1
 OFFSET $2;
 
+-- name: ListFoundByPicker :many
+SELECT * FROM found
+WHERE picker_openid = $1
+ORDER BY id
+LIMIT $2
+OFFSET $3;
+
 -- name: DeleteFound :exec
 DELETE FROM found
 WHERE id = $1;
@@ -59,6 +66,13 @@ SELECT * FROM lost
 ORDER BY id
 LIMIT $1
 OFFSET $2;
+
+-- name: ListLostByOwner :many
+SELECT * FROM lost
+WHERE owner_openid = $1
+ORDER BY id
+LIMIT $2
+OFFSET $3;
 
 -- name: DeleteLost :exec
 DELETE FROM lost
@@ -92,6 +106,20 @@ SELECT * FROM match
 ORDER BY id
 LIMIT $1
 OFFSET $2;
+
+-- name: ListMatchByPicker :many
+SELECT * FROM match
+WHERE picker_openid = $1
+ORDER BY id
+LIMIT $2
+OFFSET $3;
+
+-- name: ListMatchByOwner :many
+SELECT * FROM match
+WHERE owner_openid = $1
+ORDER BY id
+LIMIT $2
+OFFSET $3;
 
 -- name: DeleteMatch :exec
 DELETE FROM match

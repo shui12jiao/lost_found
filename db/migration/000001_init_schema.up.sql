@@ -99,8 +99,10 @@ CREATE TABLE "manager" (
 CREATE TABLE "usr" (
   "openid" varchar PRIMARY KEY,
   "name" varchar NOT NULL,
+  "phone" varchar NOT NULL,
   "student_id" varchar NOT NULL,
-  "avatar" varchar NOT NULL
+  "avatar_url" varchar NOT NULL,
+  "avatar" bytea NOT NULL
 );
 
 ALTER TABLE "found" ADD FOREIGN KEY ("picker_openid") REFERENCES "usr" ("openid");

@@ -167,6 +167,8 @@ type TypeWide struct {
 type Usr struct {
 	Openid    string `json:"openid"`
 	Name      string `json:"name"`
+	Phone     string `json:"phone"`
 	StudentID string `json:"studentID"`
-	Avatar    string `json:"avatar"`
+	AvatarUrl string `json:"avatarUrl"`
+	Avatar    []byte `json:"avatar"`
 }

@@ -13,6 +13,7 @@ type Config struct {
 	ServerAddress       string        `mapstructure:"SERVER_ADDRESS"`
 	TokenSymmetricKey   string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
 	AccessTokenDuration time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
+	SessionLifeTime     time.Duration `mapstructure:"SESSION_LIFE_TIME"`
 }
 
 //从文件或环境变量中读取配置

@@ -39,6 +39,11 @@ WHERE id  = $1 LIMIT 1;
 -- name: ListLocationNarrow :many
 SELECT * FROM location_narrow;
 
+-- name: ListLocationNarrowByWide :many
+SELECT * FROM location_narrow
+WHERE wide_id = $1
+ORDER BY id;
+
 -- name: DeleteLocationNarrow :exec
 DELETE FROM location_narrow
 WHERE id = $1;
