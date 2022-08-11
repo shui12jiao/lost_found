@@ -29,6 +29,22 @@ func (e *Campus) Scan(src interface{}) error {
 	return nil
 }
 
+func (e Campus) Valid() bool {
+	switch e {
+	case CampusQing,
+		CampusSha:
+		return true
+	}
+	return false
+}
+
+func AllCampusValues() []Campus {
+	return []Campus{
+		CampusQing,
+		CampusSha,
+	}
+}
+
 type LocationStatus string
 
 const (
@@ -49,10 +65,27 @@ func (e *LocationStatus) Scan(src interface{}) error {
 	return nil
 }
 
+func (e LocationStatus) Valid() bool {
+	switch e {
+	case LocationStatusOriginal,
+		LocationStatusEntrainment,
+		LocationStatusElsewhere:
+		return true
+	}
+	return false
+}
+
+func AllLocationStatusValues() []LocationStatus {
+	return []LocationStatus{
+		LocationStatusOriginal,
+		LocationStatusEntrainment,
+		LocationStatusElsewhere,
+	}
+}
+
 type Permission string
 
 const (
-	PermissionLevel0 Permission = "level0"
 	PermissionLevel1 Permission = "level1"
 	PermissionLevel2 Permission = "level2"
 	PermissionLevel3 Permission = "level3"
@@ -68,6 +101,24 @@ func (e *Permission) Scan(src interface{}) error {
 		return fmt.Errorf("unsupported scan type for Permission: %T", src)
 	}
 	return nil
+}
+
+func (e Permission) Valid() bool {
+	switch e {
+	case PermissionLevel1,
+		PermissionLevel2,
+		PermissionLevel3:
+		return true
+	}
+	return false
+}
+
+func AllPermissionValues() []Permission {
+	return []Permission{
+		PermissionLevel1,
+		PermissionLevel2,
+		PermissionLevel3,
+	}
 }
 
 type TimeBucket string
@@ -92,6 +143,28 @@ func (e *TimeBucket) Scan(src interface{}) error {
 	return nil
 }
 
+func (e TimeBucket) Valid() bool {
+	switch e {
+	case TimeBucketMorning,
+		TimeBucketNoon,
+		TimeBucketAfternoon,
+		TimeBucketEvening,
+		TimeBucketNight:
+		return true
+	}
+	return false
+}
+
+func AllTimeBucketValues() []TimeBucket {
+	return []TimeBucket{
+		TimeBucketMorning,
+		TimeBucketNoon,
+		TimeBucketAfternoon,
+		TimeBucketEvening,
+		TimeBucketNight,
+	}
+}
+
 type Found struct {
 	ID             int32          `json:"id"`
 	CreateAt       time.Time      `json:"createAt"`
@@ -105,8 +178,8 @@ type Found struct {
 	ItemInfo       string         `json:"itemInfo"`
 	Image          string         `json:"image"`
 	ImageKey       string         `json:"imageKey"`
-	OwnerInfo      sql.NullString `json:"ownerInfo"`
-	AddtionalInfo  sql.NullString `json:"addtionalInfo"`
+	OwnerInfo      string         `json:"ownerInfo"`
+	AddtionalInfo  string         `json:"addtionalInfo"`
 }
 
 type LocationNarrow struct {
@@ -122,15 +195,15 @@ type LocationWide struct {
 }
 
 type Lost struct {
-	ID          int32         `json:"id"`
-	CreateAt    time.Time     `json:"createAt"`
-	OwnerOpenid string        `json:"ownerOpenid"`
-	LostDate    time.Time     `json:"lostDate"`
-	TimeBucket  TimeBucket    `json:"timeBucket"`
-	TypeID      int16         `json:"typeID"`
-	LocationID  int16         `json:"locationID"`
-	LocationId1 sql.NullInt16 `json:"locationId1"`
-	LocationId2 sql.NullInt16 `json:"locationId2"`
+	ID          int32      `json:"id"`
+	CreateAt    time.Time  `json:"createAt"`
+	OwnerOpenid string     `json:"ownerOpenid"`
+	LostDate    time.Time  `json:"lostDate"`
+	TimeBucket  TimeBucket `json:"timeBucket"`
+	TypeID      int16      `json:"typeID"`
+	LocationID  int16      `json:"locationID"`
+	LocationId1 int16      `json:"locationId1"`
+	LocationId2 int16      `json:"locationId2"`
 }
 
 type Manager struct {

@@ -1,0 +1,4 @@
+//TODO
+location.go type.go manager.go
+item.go拾取物品found或者遗失物品lost，发布者确认完成，转换为归还物品match
+通信服务，联系发布者

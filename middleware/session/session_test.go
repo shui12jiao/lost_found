@@ -15,17 +15,20 @@ func TestSession(t *testing.T) {
 	issuedAt := time.Now()
 	openid := util.RandomString(28)
 	session_key := util.RandomString(24)
+	sessionValue := make(map[string]string, 2)
+	sessionValue["openid"] = openid
+	sessionValue["session_key"] = session_key
 
-	sessionId, err := manager.AddSession(openid, session_key)
+	sessionId, err := manager.AddSession(sessionValue)
 	require.NoError(t, err)
 
 	session, err := manager.ReadSession(sessionId)
 	require.NoError(t, err)
 	require.NotEmpty(t, session)
 
-	require.Equal(t, sessionId, session.ID)
-	require.Equal(t, openid, session.Value[0])
-	require.Equal(t, session_key, session.Value[1])
+	require.Equal(t, sessionId, session.ID.String())
+	require.Equal(t, openid, sessionValue["openid"])
+	require.Equal(t, session_key, sessionValue["session_key"])
 	require.WithinDuration(t, issuedAt, session.IssuedAt, time.Second)
 
 	time.Sleep(lifetime)

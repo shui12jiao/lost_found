@@ -9,6 +9,7 @@ import (
 
 var (
 	ErrSessionNotFound = errors.New("session not found")
+	ErrSessionExpired  = errors.New("session expired")
 )
 
 type Manager struct {
@@ -42,7 +43,12 @@ func (manager *Manager) AddSession(value map[string]string) (string, error) {
 }
 
 func (manager *Manager) ReadSession(sid string) (*Session, error) {
-	return manager.store.Read(sid)
+	session, err := manager.store.Read(sid)
+	if session.IssuedAt.Add(manager.lifetime).Before(time.Now()) {
+		session = nil
+		err = ErrSessionExpired
+	}
+	return session, err
 }
 
 func (manager *Manager) DestorySession(sid string) error {

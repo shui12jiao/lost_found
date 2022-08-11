@@ -12,7 +12,19 @@ INSERT INTO usr (
 
 -- name: GetUsr :one
 SELECT * FROM usr
-WHERE openid  = $1 LIMIT 1;
+WHERE openid  = $1
+LIMIT 1;
+
+-- name: SearchUsr :many
+SELECT * FROM usr
+WHERE name LIKE $1
+OR student_id LIKE $1
+OR phone LIKE $1;
+
+-- name: ListUsr :many
+SELECT * FROM usr
+LIMIT $1
+OFFSET $2;
 
 -- name: DeleteUsr :exec
 DELETE FROM usr

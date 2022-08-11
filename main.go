@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"lost_found/api"
+	"lost_found/db/sqlc"
 	"lost_found/util"
 
 	_ "github.com/lib/pq"
@@ -20,7 +21,7 @@ func main() {
 		log.Fatal("failed to connect to db:", err)
 	}
 
-	store := api.NewStore(conn)
+	store := sqlc.NewStore(conn)
 	server, err := api.NewServer(config, store)
 	if err != nil {
 		log.Fatal("failed to create server")

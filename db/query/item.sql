@@ -32,9 +32,7 @@ OFFSET $2;
 -- name: ListFoundByPicker :many
 SELECT * FROM found
 WHERE picker_openid = $1
-ORDER BY id
-LIMIT $2
-OFFSET $3;
+ORDER BY id;
 
 -- name: DeleteFound :exec
 DELETE FROM found
@@ -70,9 +68,7 @@ OFFSET $2;
 -- name: ListLostByOwner :many
 SELECT * FROM lost
 WHERE owner_openid = $1
-ORDER BY id
-LIMIT $2
-OFFSET $3;
+ORDER BY id;
 
 -- name: DeleteLost :exec
 DELETE FROM lost
@@ -110,16 +106,12 @@ OFFSET $2;
 -- name: ListMatchByPicker :many
 SELECT * FROM match
 WHERE picker_openid = $1
-ORDER BY id
-LIMIT $2
-OFFSET $3;
+ORDER BY id;
 
 -- name: ListMatchByOwner :many
 SELECT * FROM match
 WHERE owner_openid = $1
-ORDER BY id
-LIMIT $2
-OFFSET $3;
+ORDER BY id;
 
 -- name: DeleteMatch :exec
 DELETE FROM match

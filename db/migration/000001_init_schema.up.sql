@@ -13,7 +13,6 @@ CREATE TYPE "time_bucket" AS ENUM (
 );
 
 CREATE TYPE "permission" AS ENUM (
-  'level0',
   'level1',
   'level2',
   'level3'
@@ -37,8 +36,8 @@ CREATE TABLE "found" (
   "item_info" varchar NOT NULL,
   "image" varchar NOT NULL,
   "image_key" varchar NOT NULL,
-  "owner_info" varchar,
-  "addtional_info" varchar
+  "owner_info" varchar NOT NULL DEFAULT '',
+  "addtional_info" varchar NOT NULL DEFAULT ''
 );
 
 CREATE TABLE "lost" (
@@ -49,8 +48,8 @@ CREATE TABLE "lost" (
   "time_bucket" time_bucket NOT NULL,
   "type_id" smallserial NOT NULL,
   "location_id" smallserial NOT NULL,
-  "location_id1" smallserial,
-  "location_id2" smallserial
+  "location_id1" smallserial NOT NULL DEFAULT 0,
+  "location_id2" smallserial NOT NULL DEFAULT 0  
 );
 
 CREATE TABLE "match" (

@@ -64,7 +64,8 @@ func (q *Queries) DeleteUsr(ctx context.Context, openid string) error {
 
 const getUsr = `-- name: GetUsr :one
 SELECT openid, name, phone, student_id, avatar_url, avatar FROM usr
-WHERE openid  = $1 LIMIT 1
+WHERE openid  = $1
+LIMIT 1
 `
 
 func (q *Queries) GetUsr(ctx context.Context, openid string) (Usr, error) {
@@ -79,6 +80,84 @@ func (q *Queries) GetUsr(ctx context.Context, openid string) (Usr, error) {
 		&i.Avatar,
 	)
 	return i, err
+}
+
+const listUsr = `-- name: ListUsr :many
+SELECT openid, name, phone, student_id, avatar_url, avatar FROM usr
+LIMIT $1
+OFFSET $2
+`
+
+type ListUsrParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListUsr(ctx context.Context, arg ListUsrParams) ([]Usr, error) {
+	rows, err := q.db.QueryContext(ctx, listUsr, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Usr{}
+	for rows.Next() {
+		var i Usr
+		if err := rows.Scan(
+			&i.Openid,
+			&i.Name,
+			&i.Phone,
+			&i.StudentID,
+			&i.AvatarUrl,
+			&i.Avatar,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const searchUsr = `-- name: SearchUsr :many
+SELECT openid, name, phone, student_id, avatar_url, avatar FROM usr
+WHERE name LIKE $1
+OR student_id LIKE $1
+OR phone LIKE $1
+`
+
+func (q *Queries) SearchUsr(ctx context.Context, name string) ([]Usr, error) {
+	rows, err := q.db.QueryContext(ctx, searchUsr, name)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Usr{}
+	for rows.Next() {
+		var i Usr
+		if err := rows.Scan(
+			&i.Openid,
+			&i.Name,
+			&i.Phone,
+			&i.StudentID,
+			&i.AvatarUrl,
+			&i.Avatar,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const updateUsr = `-- name: UpdateUsr :one

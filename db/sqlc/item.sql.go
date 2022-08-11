@@ -44,8 +44,8 @@ type AddFoundParams struct {
 	ItemInfo       string         `json:"itemInfo"`
 	Image          string         `json:"image"`
 	ImageKey       string         `json:"imageKey"`
-	OwnerInfo      sql.NullString `json:"ownerInfo"`
-	AddtionalInfo  sql.NullString `json:"addtionalInfo"`
+	OwnerInfo      string         `json:"ownerInfo"`
+	AddtionalInfo  string         `json:"addtionalInfo"`
 }
 
 func (q *Queries) AddFound(ctx context.Context, arg AddFoundParams) (Found, error) {
@@ -101,13 +101,13 @@ INSERT INTO lost (
 `
 
 type AddLostParams struct {
-	OwnerOpenid string        `json:"ownerOpenid"`
-	LostDate    time.Time     `json:"lostDate"`
-	TimeBucket  TimeBucket    `json:"timeBucket"`
-	TypeID      int16         `json:"typeID"`
-	LocationID  int16         `json:"locationID"`
-	LocationId1 sql.NullInt16 `json:"locationId1"`
-	LocationId2 sql.NullInt16 `json:"locationId2"`
+	OwnerOpenid string     `json:"ownerOpenid"`
+	LostDate    time.Time  `json:"lostDate"`
+	TimeBucket  TimeBucket `json:"timeBucket"`
+	TypeID      int16      `json:"typeID"`
+	LocationID  int16      `json:"locationID"`
+	LocationId1 int16      `json:"locationId1"`
+	LocationId2 int16      `json:"locationId2"`
 }
 
 func (q *Queries) AddLost(ctx context.Context, arg AddLostParams) (Lost, error) {
@@ -352,18 +352,10 @@ const listFoundByPicker = `-- name: ListFoundByPicker :many
 SELECT id, create_at, picker_openid, found_date, time_bucket, location_id, location_info, location_status, type_id, item_info, image, image_key, owner_info, addtional_info FROM found
 WHERE picker_openid = $1
 ORDER BY id
-LIMIT $2
-OFFSET $3
 `
 
-type ListFoundByPickerParams struct {
-	PickerOpenid string `json:"pickerOpenid"`
-	Limit        int32  `json:"limit"`
-	Offset       int32  `json:"offset"`
-}
-
-func (q *Queries) ListFoundByPicker(ctx context.Context, arg ListFoundByPickerParams) ([]Found, error) {
-	rows, err := q.db.QueryContext(ctx, listFoundByPicker, arg.PickerOpenid, arg.Limit, arg.Offset)
+func (q *Queries) ListFoundByPicker(ctx context.Context, pickerOpenid string) ([]Found, error) {
+	rows, err := q.db.QueryContext(ctx, listFoundByPicker, pickerOpenid)
 	if err != nil {
 		return nil, err
 	}
@@ -449,18 +441,10 @@ const listLostByOwner = `-- name: ListLostByOwner :many
 SELECT id, create_at, owner_openid, lost_date, time_bucket, type_id, location_id, location_id1, location_id2 FROM lost
 WHERE owner_openid = $1
 ORDER BY id
-LIMIT $2
-OFFSET $3
 `
 
-type ListLostByOwnerParams struct {
-	OwnerOpenid string `json:"ownerOpenid"`
-	Limit       int32  `json:"limit"`
-	Offset      int32  `json:"offset"`
-}
-
-func (q *Queries) ListLostByOwner(ctx context.Context, arg ListLostByOwnerParams) ([]Lost, error) {
-	rows, err := q.db.QueryContext(ctx, listLostByOwner, arg.OwnerOpenid, arg.Limit, arg.Offset)
+func (q *Queries) ListLostByOwner(ctx context.Context, ownerOpenid string) ([]Lost, error) {
+	rows, err := q.db.QueryContext(ctx, listLostByOwner, ownerOpenid)
 	if err != nil {
 		return nil, err
 	}
@@ -543,18 +527,10 @@ const listMatchByOwner = `-- name: ListMatchByOwner :many
 SELECT id, create_at, picker_openid, owner_openid, found_date, lost_date, type_id, item_info, image, image_key, comment FROM match
 WHERE owner_openid = $1
 ORDER BY id
-LIMIT $2
-OFFSET $3
 `
 
-type ListMatchByOwnerParams struct {
-	OwnerOpenid string `json:"ownerOpenid"`
-	Limit       int32  `json:"limit"`
-	Offset      int32  `json:"offset"`
-}
-
-func (q *Queries) ListMatchByOwner(ctx context.Context, arg ListMatchByOwnerParams) ([]Match, error) {
-	rows, err := q.db.QueryContext(ctx, listMatchByOwner, arg.OwnerOpenid, arg.Limit, arg.Offset)
+func (q *Queries) ListMatchByOwner(ctx context.Context, ownerOpenid string) ([]Match, error) {
+	rows, err := q.db.QueryContext(ctx, listMatchByOwner, ownerOpenid)
 	if err != nil {
 		return nil, err
 	}
@@ -592,18 +568,10 @@ const listMatchByPicker = `-- name: ListMatchByPicker :many
 SELECT id, create_at, picker_openid, owner_openid, found_date, lost_date, type_id, item_info, image, image_key, comment FROM match
 WHERE picker_openid = $1
 ORDER BY id
-LIMIT $2
-OFFSET $3
 `
 
-type ListMatchByPickerParams struct {
-	PickerOpenid string `json:"pickerOpenid"`
-	Limit        int32  `json:"limit"`
-	Offset       int32  `json:"offset"`
-}
-
-func (q *Queries) ListMatchByPicker(ctx context.Context, arg ListMatchByPickerParams) ([]Match, error) {
-	rows, err := q.db.QueryContext(ctx, listMatchByPicker, arg.PickerOpenid, arg.Limit, arg.Offset)
+func (q *Queries) ListMatchByPicker(ctx context.Context, pickerOpenid string) ([]Match, error) {
+	rows, err := q.db.QueryContext(ctx, listMatchByPicker, pickerOpenid)
 	if err != nil {
 		return nil, err
 	}

@@ -70,29 +70,37 @@ func (server *Server) setupRouter() {
 	authRoutes.GET("/users/info", server.getUserSelf)
 	authRoutes.DELETE("/users", server.deleteUserSelf)
 	authRoutes.PATCH("/users", server.updateUserSelf)
-	//位置和类型
-	authRoutes.GET("/locations", server.listLocation)
-	authRoutes.GET("/types", server.listType)
+	//用户物品
+	authRoutes.GET("/users/found", server.listMyFound)
+	authRoutes.GET("/users/lost", server.listMyLost)
+	authRoutes.GET("/users/match", server.listMyMatch)
 	//拾取物品
 	authRoutes.GET("/founds", server.listFound)
 	authRoutes.GET("/founds/:id", server.getFound)
 	authRoutes.POST("/founds/add", server.addFound)
-	authRoutes.DELETE("/founds/delete/:id", server.deleteFound) //只能删除自己发布的拾取物
+	authRoutes.DELETE("/founds/:id", server.deleteFound) //只能删除自己发布的拾取物
 	//遗失物品
 	authRoutes.GET("/losts", server.listLost)
 	authRoutes.GET("/losts/:id", server.getLost)
 	authRoutes.POST("/losts/add", server.addLost)
-	authRoutes.DELETE("/losts/delete/:id", server.deleteLost) //只能删除自己的发布的遗失物
+	authRoutes.DELETE("/losts/:id", server.deleteLost) //只能删除自己的发布的遗失物
 	//归还物品
-	authRoutes.GET("/matches", server.listMatch) //自己遗失或拾取的已归还物品
+	authRoutes.GET("/matches", server.listMatch)
+	//位置和类型
+	authRoutes.GET("/locations", server.listLocation)
+	authRoutes.GET("/types", server.listType)
+	//管理员
+	authRoutes.GET("/managers", server.listManager)
 
 	//--管理员系统--
-	manRoutes := router.Group("/manager").Use(middleware.ManagerMiddleware(server.sessionManager, server.store))
+	manRoutes := router.Group("/admin").Use(middleware.ManagerMiddleware(server.sessionManager, server.store))
 	//用户账户
+	manRoutes.GET("/users", server.listUser)
 	manRoutes.POST("/users/add", server.addUser)
 	manRoutes.GET("/users/:id", server.getUser)
+	manRoutes.GET("/users/:query", server.searchUser)
 	manRoutes.DELETE("/users/:id", server.deleteUser)
-	manRoutes.PATCH("/users/:id", server.updateUser)
+	manRoutes.PATCH("/users", server.updateUser)
 	//位置和类型
 	manRoutes.GET("/locations", server.listLocation)
 	manRoutes.POST("/locations/add", server.addLocation)
@@ -115,6 +123,12 @@ func (server *Server) setupRouter() {
 	manRoutes.GET("/matches/:id", server.getMatch)
 	manRoutes.POST("/matches/add", server.addMatch)
 	manRoutes.DELETE("/matches/delete/:id", server.deleteMatch)
+	//管理员账户
+	manRoutes.GET("/managers", server.listManager)
+	manRoutes.POST("/managers/add", server.addManager)
+	manRoutes.GET("/managers/:id", server.getManager)
+	manRoutes.DELETE("/managers/:id", server.deleteManager)
+	manRoutes.PATCH("/managers", server.updateManager)
 }
 
 func (server *Server) Start(address string) error {

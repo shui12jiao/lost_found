@@ -13,22 +13,26 @@ import (
 )
 
 var (
-	ErrNoSession = errors.New("no session")
+	ErrNoSession         = errors.New("no session")
+	ErrUserNotFound      = errors.New("user not found")
+	ErrUserAlreadyExists = errors.New("user already exists")
+	ErrNoPermission      = errors.New("no permission")
+	ErrPermissionDenied  = errors.New("permission denied")
 )
 
 type userResponse struct {
 	Name      string `json:"name"`
-	StudentID string `json:"studentID"`
 	Phone     string `json:"phone"`
-	AvatarUrl string `json:"avatar_url"`
+	StudentID string `json:"studentID"`
+	AvatarUrl string `json:"avatarUrl"`
 	Avatar    []byte `json:"avatar"`
 }
 
 func newUserResponse(user sqlc.Usr) userResponse {
 	return userResponse{
 		Name:      user.Name,
-		StudentID: user.StudentID,
 		Phone:     user.Phone,
+		StudentID: user.StudentID,
 		AvatarUrl: user.AvatarUrl,
 		Avatar:    user.Avatar,
 	}
@@ -36,16 +40,11 @@ func newUserResponse(user sqlc.Usr) userResponse {
 
 //用户获取自己的信息
 func (server *Server) getUserSelf(ctx *gin.Context) {
-	userSession, ok := ctx.Get(middleware.SessionHeaderKey)
-	if !ok {
-		ctx.JSON(http.StatusUnauthorized, errorResponse(ErrNoSession))
-		return
-	}
-	openid := userSession.(session.Session).ID.String()
+	openid := ctx.MustGet(middleware.SessionHeaderKey).(session.Session).ID.String()
 
 	user, err := server.store.GetUsr(ctx, openid)
 	if err == sql.ErrNoRows {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, errorResponse(ErrUserNotFound))
 	} else if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 	}
@@ -55,12 +54,7 @@ func (server *Server) getUserSelf(ctx *gin.Context) {
 
 //用户永久注销自己账户
 func (server *Server) deleteUserSelf(ctx *gin.Context) {
-	userSession, ok := ctx.Get(middleware.SessionHeaderKey)
-	if !ok {
-		ctx.JSON(http.StatusUnauthorized, errorResponse(ErrNoSession))
-		return
-	}
-	openid := userSession.(session.Session).ID.String()
+	openid := ctx.MustGet(middleware.SessionHeaderKey).(session.Session).ID.String()
 
 	err := server.store.DeleteUsr(ctx, openid)
 	if err != nil {
@@ -72,17 +66,12 @@ func (server *Server) deleteUserSelf(ctx *gin.Context) {
 //用户更新自己账户信息
 type updateUserSelfRequest struct {
 	Name      string `json:"name" binding:"required,min=4,max=24"`
-	AvatarUrl string `json:"avatar_url" binding:"required,url"`
+	AvatarUrl string `json:"avatarUrl" binding:"required,url"`
 	Avatar    []byte `json:"avatar" binding:"required"`
 }
 
 func (server *Server) updateUserSelf(ctx *gin.Context) {
-	userSession, ok := ctx.Get(middleware.SessionHeaderKey)
-	if !ok {
-		ctx.JSON(http.StatusUnauthorized, errorResponse(ErrNoSession))
-		return
-	}
-	openid := userSession.(session.Session).ID.String()
+	openid := ctx.MustGet(middleware.SessionHeaderKey).(session.Session).ID.String()
 
 	var request updateUserSelfRequest
 	if err := ctx.ShouldBindJSON(&request); err != nil {
@@ -92,7 +81,7 @@ func (server *Server) updateUserSelf(ctx *gin.Context) {
 
 	user, err := server.store.GetUsr(ctx, openid)
 	if err == sql.ErrNoRows {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, errorResponse(ErrUserNotFound))
 	} else if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 	}
@@ -129,7 +118,7 @@ func (server *Server) updateUserSelf(ctx *gin.Context) {
 //注册添加微信用户
 type addUserRequest struct {
 	Code      string `json:"code" binding:"required,alphanum"`
-	PhoneCode string `json:"phone_code" binding:"required,alphanum"`
+	PhoneCode string `json:"phoneCode" binding:"required,alphanum"`
 }
 
 func (server *Server) addUser(ctx *gin.Context) {
@@ -148,6 +137,12 @@ func (server *Server) addUser(ctx *gin.Context) {
 	getPhoneNumberRes, err := auth.GetPhoneNumber(addUserRequest.PhoneCode)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	_, err = server.store.GetUsr(ctx, code2SessionRes.OpenID)
+	if err != sql.ErrNoRows {
+		ctx.JSON(http.StatusBadRequest, errorResponse(ErrUserAlreadyExists))
 		return
 	}
 
@@ -173,7 +168,7 @@ type addUserResponse = userResponse
 //用户登录
 type loginUserRequest struct {
 	Code      string `json:"code" binding:"required,alphanum"`
-	SessionId string `json:"session_id" binding:"required,uuid"`
+	SessionID string `json:"sessionID" binding:"required,uuid"`
 }
 
 func (server *Server) loginUser(ctx *gin.Context) {
@@ -183,14 +178,14 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		return
 	}
 
-	session, err := server.sessionManager.ReadSession(loginUserRequest.SessionId)
+	session, err := server.sessionManager.ReadSession(loginUserRequest.SessionID)
 	if session != nil && err == nil { //用户已登录
 		ctx.Redirect(http.StatusFound, "/") //重定向至首页
 		return
 	}
 
 	//用户登录
-	//获取用户OpenId和SessionKey
+	//获取用户OpenID和SessionKey
 	auth := server.wxMini.GetAuth()
 	res, err := auth.Code2Session(loginUserRequest.Code)
 	if err != nil {
@@ -200,7 +195,7 @@ func (server *Server) loginUser(ctx *gin.Context) {
 	sessionValue := service.FormSessionValue(res)
 
 	//添加新session
-	sessionId, err := server.sessionManager.AddSession(sessionValue)
+	sessionID, err := server.sessionManager.AddSession(sessionValue)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -214,7 +209,7 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 	}
 
-	ctx.SetCookie(cookieName, sessionId, int(server.config.SessionLifeTime.Seconds()), "/", domain, false, true)
+	ctx.SetCookie(cookieName, sessionID, int(server.config.SessionLifeTime.Seconds()), "/", domain, false, true)
 	response := loginUserResponse{
 		User: newUserResponse(user),
 	}
@@ -222,41 +217,146 @@ func (server *Server) loginUser(ctx *gin.Context) {
 }
 
 type loginUserResponse struct {
-	User userResponse
+	User userResponse `json:"user"`
 }
 
-//用户获取
+//获取用户
 type getUserRequest struct {
-	Openid string `json:"openid" binding:"alphanum"`
+	Openid string `json:"openid" binding:"required,alphanum,min=28"`
 }
 
 func (server *Server) getUser(ctx *gin.Context) {
+	var request getUserRequest
+	if err := ctx.ShouldBindUri(&request); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
 
+	user, err := server.store.GetUsr(ctx, request.Openid)
+	if err == sql.ErrNoRows {
+		ctx.JSON(http.StatusBadRequest, errorResponse(ErrUserNotFound))
+	} else if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+	}
+
+	response := newUserResponse(user)
+	ctx.JSON(http.StatusOK, response)
+}
+
+//搜索用户
+type searchUserRequest struct {
+	Query string `json:"query" binding:"required,alphanum"`
+}
+
+func (server *Server) searchUser(ctx *gin.Context) {
+	var request searchUserRequest
+	if err := ctx.ShouldBindUri(&request); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	users, err := server.store.SearchUsr(ctx, request.Query)
+	if err == sql.ErrNoRows {
+		ctx.JSON(http.StatusOK, nil)
+		return
+	} else if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	//返回值包括openid
+	ctx.JSON(http.StatusOK, users)
 }
 
 //显示所有用户
-type listUserRequest struct{}
+type listUserRequest struct {
+	PageID   int32 `json:"pageID" binding:"required,gte=1"`
+	PageSize int32 `json:"pageSize" binding:"required,min=5,max=30"`
+}
 
 func (server *Server) listUser(ctx *gin.Context) {
+	var request listUserRequest
+	if err := ctx.ShouldBindQuery(&request); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
 
+	param := sqlc.ListUsrParams{
+		Limit:  request.PageSize,
+		Offset: (request.PageID - 1) * request.PageSize,
+	}
+	users, err := server.store.ListUsr(ctx, param)
+	if err != nil && err != sql.ErrNoRows {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	//返回值包括用户openid
+	ctx.JSON(http.StatusOK, users)
 }
-
-type listUserResponse struct{}
 
 //更新用户信息
-type updateUserRequest struct{}
+type updateUserRequest struct {
+	Openid    string `json:"openid" binding:"required,alphanum,min=28"`
+	Name      string `json:"name" binding:"required,min=4,max=24"`
+	Phone     string `json:"phone" binding:"required,len=11"`
+	StudentID string `json:"studentID" binding:"required"`
+	AvatarUrl string `json:"avatarUrl" binding:"required,url"`
+	Avatar    []byte `json:"avatar" binding:"required"`
+}
 
 func (server *Server) updateUser(ctx *gin.Context) {
+	var request updateUserRequest
+	if err := ctx.ShouldBindJSON(&request); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
 
+	//低于PermissionLevel2的管理员无法更新用户信息
+	manager := ctx.MustGet(middleware.ManagerHeaderKey).(sqlc.Manager)
+	if per := manager.Permission; per != sqlc.PermissionLevel2 && per != sqlc.PermissionLevel3 {
+		ctx.JSON(http.StatusForbidden, errorResponse(ErrPermissionDenied))
+		return
+	}
+
+	param := sqlc.UpdateUsrParams{
+		Openid:    request.Openid,
+		Name:      request.Name,
+		Phone:     request.Phone,
+		StudentID: request.StudentID,
+		AvatarUrl: request.AvatarUrl,
+		Avatar:    request.Avatar,
+	}
+	user, err := server.store.UpdateUsr(ctx, param)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	ctx.JSON(http.StatusOK, user)
 }
-
-type updateUserResponse struct{}
 
 //删除用户
-type deleteUserRequest struct{}
-
-func (server *Server) deleteUser(ctx *gin.Context) {
-
+type deleteUserRequest struct {
+	Openid string `json:"openid" binding:"required,alphanum,min=28"`
 }
 
-type deleteUserResponse struct{}
+func (server *Server) deleteUser(ctx *gin.Context) {
+	var request deleteUserRequest
+	if err := ctx.ShouldBindUri(&request); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	//低于PermissionLevel2的管理员无法删除用户
+	manager := ctx.MustGet(middleware.ManagerHeaderKey).(sqlc.Manager)
+	if per := manager.Permission; per != sqlc.PermissionLevel2 && per != sqlc.PermissionLevel3 {
+		ctx.JSON(http.StatusForbidden, errorResponse(ErrPermissionDenied))
+		return
+	}
+
+	err := server.store.DeleteUsr(ctx, request.Openid)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, nil)
+}
