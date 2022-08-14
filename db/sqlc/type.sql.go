@@ -97,6 +97,7 @@ func (q *Queries) GetTypeWide(ctx context.Context, id int16) (TypeWide, error) {
 
 const listTypeNarrow = `-- name: ListTypeNarrow :many
 SELECT id, name, wide_id FROM type_narrow
+ORDER BY id
 `
 
 func (q *Queries) ListTypeNarrow(ctx context.Context) ([]TypeNarrow, error) {
@@ -122,8 +123,38 @@ func (q *Queries) ListTypeNarrow(ctx context.Context) ([]TypeNarrow, error) {
 	return items, nil
 }
 
+const listTypeNarrowByWide = `-- name: ListTypeNarrowByWide :many
+SELECT id, name, wide_id FROM type_narrow
+WHERE wide_id = $1
+ORDER BY id
+`
+
+func (q *Queries) ListTypeNarrowByWide(ctx context.Context, wideID int16) ([]TypeNarrow, error) {
+	rows, err := q.db.QueryContext(ctx, listTypeNarrowByWide, wideID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []TypeNarrow{}
+	for rows.Next() {
+		var i TypeNarrow
+		if err := rows.Scan(&i.ID, &i.Name, &i.WideID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listTypeWide = `-- name: ListTypeWide :many
 SELECT id, name FROM type_wide
+ORDER BY id
 `
 
 func (q *Queries) ListTypeWide(ctx context.Context) ([]TypeWide, error) {

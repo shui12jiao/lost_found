@@ -84,6 +84,7 @@ func (q *Queries) GetUsr(ctx context.Context, openid string) (Usr, error) {
 
 const listUsr = `-- name: ListUsr :many
 SELECT openid, name, phone, student_id, avatar_url, avatar FROM usr
+ORDER BY id
 LIMIT $1
 OFFSET $2
 `
@@ -232,7 +233,6 @@ func (q *Queries) UpdateUsrAvatar(ctx context.Context, arg UpdateUsrAvatarParams
 const updateUsrName = `-- name: UpdateUsrName :one
 UPDATE usr
 SET name = $2
-
 WHERE openid = $1
 RETURNING openid, name, phone, student_id, avatar_url, avatar
 `

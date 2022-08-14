@@ -23,6 +23,7 @@ OR phone LIKE $1;
 
 -- name: ListUsr :many
 SELECT * FROM usr
+ORDER BY id
 LIMIT $1
 OFFSET $2;
 
@@ -33,7 +34,6 @@ WHERE openid = $1;
 -- name: UpdateUsrName :one
 UPDATE usr
 SET name = $2
-
 WHERE openid = $1
 RETURNING *;
 

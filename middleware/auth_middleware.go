@@ -3,9 +3,9 @@ package middleware
 import (
 	"errors"
 	"fmt"
-	"lost_found/db/sqlc"
 	"lost_found/middleware/session"
 	"lost_found/middleware/token"
+	"lost_found/service"
 	"net/http"
 	"strings"
 
@@ -78,7 +78,7 @@ func AuthJWTMiddleware(tokenMaker token.Maker) gin.HandlerFunc {
 	}
 }
 
-func ManagerMiddleware(sessionManager *session.Manager, store sqlc.Store) gin.HandlerFunc { //TODO
+func ManagerMiddleware(sessionManager *session.Manager, store service.Store) gin.HandlerFunc { //TODO
 	return func(ctx *gin.Context) {
 		sessionID := ctx.GetHeader(CookieName)
 		if len(sessionID) == 0 {

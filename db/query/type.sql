@@ -13,7 +13,8 @@ SELECT * FROM type_wide
 WHERE id  = $1 LIMIT 1;
 
 -- name: ListTypeWide :many
-SELECT * FROM type_wide;
+SELECT * FROM type_wide
+ORDER BY id;
 
 -- name: DeleteTypeWide :exec
 DELETE FROM type_wide
@@ -36,7 +37,13 @@ SELECT * FROM type_narrow
 WHERE id  = $1 LIMIT 1;
 
 -- name: ListTypeNarrow :many
-SELECT * FROM type_narrow;
+SELECT * FROM type_narrow
+ORDER BY id;
+
+-- name: ListTypeNarrowByWide :many
+SELECT * FROM type_narrow
+WHERE wide_id = $1
+ORDER BY id;
 
 -- name: DeleteTypeNarrow :exec
 DELETE FROM type_narrow

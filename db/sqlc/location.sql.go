@@ -103,6 +103,7 @@ func (q *Queries) GetLocationWide(ctx context.Context, id int16) (LocationWide, 
 
 const listLocationNarrow = `-- name: ListLocationNarrow :many
 SELECT id, name, wide_id FROM location_narrow
+ORDER BY id
 `
 
 func (q *Queries) ListLocationNarrow(ctx context.Context) ([]LocationNarrow, error) {

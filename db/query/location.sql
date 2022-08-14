@@ -37,7 +37,8 @@ SELECT * FROM location_narrow
 WHERE id  = $1 LIMIT 1;
 
 -- name: ListLocationNarrow :many
-SELECT * FROM location_narrow;
+SELECT * FROM location_narrow
+ORDER BY id;
 
 -- name: ListLocationNarrowByWide :many
 SELECT * FROM location_narrow

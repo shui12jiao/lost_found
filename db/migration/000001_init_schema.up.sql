@@ -34,7 +34,7 @@ CREATE TABLE "found" (
   "location_status" location_status NOT NULL,
   "type_id" smallserial NOT NULL,
   "item_info" varchar NOT NULL,
-  "image" varchar NOT NULL,
+  "image" bytea NOT NULL,
   "image_key" varchar NOT NULL,
   "owner_info" varchar NOT NULL DEFAULT '',
   "addtional_info" varchar NOT NULL DEFAULT ''
@@ -47,6 +47,9 @@ CREATE TABLE "lost" (
   "lost_date" date NOT NULL,
   "time_bucket" time_bucket NOT NULL,
   "type_id" smallserial NOT NULL,
+  "item_info" varchar NOT NULL,
+  "image" bytea NOT NULL DEFAULT '',
+  "image_key" varchar NOT NULL DEFAULT '',
   "location_id" smallserial NOT NULL,
   "location_id1" smallserial NOT NULL DEFAULT 0,
   "location_id2" smallserial NOT NULL DEFAULT 0  
@@ -55,50 +58,50 @@ CREATE TABLE "lost" (
 CREATE TABLE "match" (
   "id" serial PRIMARY KEY,
   "create_at" timestamptz NOT NULL DEFAULT 'now()',
-  "picker_openid" varchar NOT NULL,
-  "owner_openid" varchar NOT NULL,
+  "picker_openid" varchar NOT NULL DEFAULT '',
+  "owner_openid" varchar NOT NULL DEFAULT '',
   "found_date" date NOT NULL,
   "lost_date" date NOT NULL,
   "type_id" smallserial NOT NULL,
   "item_info" varchar NOT NULL,
-  "image" varchar NOT NULL,
+  "image" bytea NOT NULL,
   "image_key" varchar NOT NULL,
-  "comment" varchar
+  "comment" varchar NOT NULL DEFAULT ''
 );
 
 CREATE TABLE "location_wide" (
   "id" smallserial PRIMARY KEY,
-  "name" varchar NOT NULL,
+  "name" varchar UNIQUE NOT NULL,
   "campus" campus NOT NULL
 );
 
 CREATE TABLE "location_narrow" (
   "id" smallserial PRIMARY KEY,
-  "name" varchar NOT NULL,
+  "name" varchar UNIQUE NOT NULL,
   "wide_id" smallserial NOT NULL
 );
 
 CREATE TABLE "type_wide" (
   "id" smallserial PRIMARY KEY,
-  "name" varchar NOT NULL
+  "name" varchar UNIQUE NOT NULL
 );
 
 CREATE TABLE "type_narrow" (
   "id" smallserial PRIMARY KEY,
-  "name" varchar NOT NULL,
+  "name" varchar UNIQUE NOT NULL,
   "wide_id" smallserial NOT NULL
 );
 
 CREATE TABLE "manager" (
   "id" smallserial PRIMARY KEY,
-  "usr_openid" varchar NOT NULL,
+  "usr_openid" varchar UNIQUE NOT NULL,
   "permission" permission NOT NULL
 );
 
 CREATE TABLE "usr" (
   "openid" varchar PRIMARY KEY,
   "name" varchar NOT NULL,
-  "phone" varchar NOT NULL,
+  "phone" varchar UNIQUE NOT NULL,
   "student_id" varchar NOT NULL,
   "avatar_url" varchar NOT NULL,
   "avatar" bytea NOT NULL

@@ -2,7 +2,6 @@ package api
 
 import (
 	"database/sql"
-	"errors"
 	"lost_found/db/sqlc"
 	"lost_found/middleware"
 	"lost_found/middleware/session"
@@ -10,14 +9,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-)
-
-var (
-	ErrNoSession         = errors.New("no session")
-	ErrUserNotFound      = errors.New("user not found")
-	ErrUserAlreadyExists = errors.New("user already exists")
-	ErrNoPermission      = errors.New("no permission")
-	ErrPermissionDenied  = errors.New("permission denied")
+	"github.com/lib/pq"
 )
 
 type userResponse struct {
@@ -44,7 +36,7 @@ func (server *Server) getUserSelf(ctx *gin.Context) {
 
 	user, err := server.store.GetUsr(ctx, openid)
 	if err == sql.ErrNoRows {
-		ctx.JSON(http.StatusBadRequest, errorResponse(ErrUserNotFound))
+		ctx.JSON(http.StatusNotFound, errorResponse(ErrUserNotFound))
 	} else if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 	}
@@ -81,7 +73,7 @@ func (server *Server) updateUserSelf(ctx *gin.Context) {
 
 	user, err := server.store.GetUsr(ctx, openid)
 	if err == sql.ErrNoRows {
-		ctx.JSON(http.StatusBadRequest, errorResponse(ErrUserNotFound))
+		ctx.JSON(http.StatusNotFound, errorResponse(ErrUserNotFound))
 	} else if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 	}
@@ -156,6 +148,13 @@ func (server *Server) addUser(ctx *gin.Context) {
 	}
 	user, err := server.store.AddUsr(ctx, param)
 	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok {
+			switch pqErr.Code.Name() {
+			case "foreign_key_violation", "unique_violation":
+				ctx.JSON(http.StatusForbidden, errorResponse(err))
+				return
+			}
+		}
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 	}
 
@@ -234,7 +233,7 @@ func (server *Server) getUser(ctx *gin.Context) {
 
 	user, err := server.store.GetUsr(ctx, request.Openid)
 	if err == sql.ErrNoRows {
-		ctx.JSON(http.StatusBadRequest, errorResponse(ErrUserNotFound))
+		ctx.JSON(http.StatusNotFound, errorResponse(ErrUserNotFound))
 	} else if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 	}
@@ -250,16 +249,13 @@ type searchUserRequest struct {
 
 func (server *Server) searchUser(ctx *gin.Context) {
 	var request searchUserRequest
-	if err := ctx.ShouldBindUri(&request); err != nil {
+	if err := ctx.ShouldBindQuery(&request); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
 	users, err := server.store.SearchUsr(ctx, request.Query)
-	if err == sql.ErrNoRows {
-		ctx.JSON(http.StatusOK, nil)
-		return
-	} else if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}

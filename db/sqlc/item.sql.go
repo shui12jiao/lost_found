@@ -7,7 +7,6 @@ package sqlc
 
 import (
 	"context"
-	"database/sql"
 	"time"
 )
 
@@ -42,7 +41,7 @@ type AddFoundParams struct {
 	LocationStatus LocationStatus `json:"locationStatus"`
 	TypeID         int16          `json:"typeID"`
 	ItemInfo       string         `json:"itemInfo"`
-	Image          string         `json:"image"`
+	Image          []byte         `json:"image"`
 	ImageKey       string         `json:"imageKey"`
 	OwnerInfo      string         `json:"ownerInfo"`
 	AddtionalInfo  string         `json:"addtionalInfo"`
@@ -92,12 +91,15 @@ INSERT INTO lost (
     lost_date,
     time_bucket,
     type_id,
+    item_info,
+    image,
+    image_key,
     location_id,
     location_id1,
     location_id2
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7
-) RETURNING id, create_at, owner_openid, lost_date, time_bucket, type_id, location_id, location_id1, location_id2
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+) RETURNING id, create_at, owner_openid, lost_date, time_bucket, type_id, item_info, image, image_key, location_id, location_id1, location_id2
 `
 
 type AddLostParams struct {
@@ -105,6 +107,9 @@ type AddLostParams struct {
 	LostDate    time.Time  `json:"lostDate"`
 	TimeBucket  TimeBucket `json:"timeBucket"`
 	TypeID      int16      `json:"typeID"`
+	ItemInfo    string     `json:"itemInfo"`
+	Image       []byte     `json:"image"`
+	ImageKey    string     `json:"imageKey"`
 	LocationID  int16      `json:"locationID"`
 	LocationId1 int16      `json:"locationId1"`
 	LocationId2 int16      `json:"locationId2"`
@@ -116,6 +121,9 @@ func (q *Queries) AddLost(ctx context.Context, arg AddLostParams) (Lost, error) 
 		arg.LostDate,
 		arg.TimeBucket,
 		arg.TypeID,
+		arg.ItemInfo,
+		arg.Image,
+		arg.ImageKey,
 		arg.LocationID,
 		arg.LocationId1,
 		arg.LocationId2,
@@ -128,6 +136,9 @@ func (q *Queries) AddLost(ctx context.Context, arg AddLostParams) (Lost, error) 
 		&i.LostDate,
 		&i.TimeBucket,
 		&i.TypeID,
+		&i.ItemInfo,
+		&i.Image,
+		&i.ImageKey,
 		&i.LocationID,
 		&i.LocationId1,
 		&i.LocationId2,
@@ -155,15 +166,15 @@ INSERT INTO match (
 `
 
 type AddMatchParams struct {
-	PickerOpenid string         `json:"pickerOpenid"`
-	OwnerOpenid  string         `json:"ownerOpenid"`
-	FoundDate    time.Time      `json:"foundDate"`
-	LostDate     time.Time      `json:"lostDate"`
-	TypeID       int16          `json:"typeID"`
-	ItemInfo     string         `json:"itemInfo"`
-	Image        string         `json:"image"`
-	ImageKey     string         `json:"imageKey"`
-	Comment      sql.NullString `json:"comment"`
+	PickerOpenid string    `json:"pickerOpenid"`
+	OwnerOpenid  string    `json:"ownerOpenid"`
+	FoundDate    time.Time `json:"foundDate"`
+	LostDate     time.Time `json:"lostDate"`
+	TypeID       int16     `json:"typeID"`
+	ItemInfo     string    `json:"itemInfo"`
+	Image        []byte    `json:"image"`
+	ImageKey     string    `json:"imageKey"`
+	Comment      string    `json:"comment"`
 }
 
 func (q *Queries) AddMatch(ctx context.Context, arg AddMatchParams) (Match, error) {
@@ -253,7 +264,7 @@ func (q *Queries) GetFound(ctx context.Context, id int32) (Found, error) {
 }
 
 const getLost = `-- name: GetLost :one
-SELECT id, create_at, owner_openid, lost_date, time_bucket, type_id, location_id, location_id1, location_id2 FROM lost
+SELECT id, create_at, owner_openid, lost_date, time_bucket, type_id, item_info, image, image_key, location_id, location_id1, location_id2 FROM lost
 WHERE id = $1 LIMIT 1
 `
 
@@ -267,6 +278,9 @@ func (q *Queries) GetLost(ctx context.Context, id int32) (Lost, error) {
 		&i.LostDate,
 		&i.TimeBucket,
 		&i.TypeID,
+		&i.ItemInfo,
+		&i.Image,
+		&i.ImageKey,
 		&i.LocationID,
 		&i.LocationId1,
 		&i.LocationId2,
@@ -393,7 +407,7 @@ func (q *Queries) ListFoundByPicker(ctx context.Context, pickerOpenid string) ([
 }
 
 const listLost = `-- name: ListLost :many
-SELECT id, create_at, owner_openid, lost_date, time_bucket, type_id, location_id, location_id1, location_id2 FROM lost
+SELECT id, create_at, owner_openid, lost_date, time_bucket, type_id, item_info, image, image_key, location_id, location_id1, location_id2 FROM lost
 ORDER BY id
 LIMIT $1
 OFFSET $2
@@ -420,6 +434,9 @@ func (q *Queries) ListLost(ctx context.Context, arg ListLostParams) ([]Lost, err
 			&i.LostDate,
 			&i.TimeBucket,
 			&i.TypeID,
+			&i.ItemInfo,
+			&i.Image,
+			&i.ImageKey,
 			&i.LocationID,
 			&i.LocationId1,
 			&i.LocationId2,
@@ -438,7 +455,7 @@ func (q *Queries) ListLost(ctx context.Context, arg ListLostParams) ([]Lost, err
 }
 
 const listLostByOwner = `-- name: ListLostByOwner :many
-SELECT id, create_at, owner_openid, lost_date, time_bucket, type_id, location_id, location_id1, location_id2 FROM lost
+SELECT id, create_at, owner_openid, lost_date, time_bucket, type_id, item_info, image, image_key, location_id, location_id1, location_id2 FROM lost
 WHERE owner_openid = $1
 ORDER BY id
 `
@@ -459,6 +476,9 @@ func (q *Queries) ListLostByOwner(ctx context.Context, ownerOpenid string) ([]Lo
 			&i.LostDate,
 			&i.TimeBucket,
 			&i.TypeID,
+			&i.ItemInfo,
+			&i.Image,
+			&i.ImageKey,
 			&i.LocationID,
 			&i.LocationId1,
 			&i.LocationId2,

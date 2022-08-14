@@ -66,6 +66,7 @@ func (q *Queries) GetManagerByOpenid(ctx context.Context, usrOpenid string) (Man
 
 const listManager = `-- name: ListManager :many
 SELECT id, usr_openid, permission FROM manager
+ORDER BY id
 `
 
 func (q *Queries) ListManager(ctx context.Context) ([]Manager, error) {
@@ -89,4 +90,23 @@ func (q *Queries) ListManager(ctx context.Context) ([]Manager, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateManager = `-- name: UpdateManager :one
+UPDATE manager
+SET permission = $2
+WHERE id = $1
+RETURNING id, usr_openid, permission
+`
+
+type UpdateManagerParams struct {
+	ID         int16      `json:"id"`
+	Permission Permission `json:"permission"`
+}
+
+func (q *Queries) UpdateManager(ctx context.Context, arg UpdateManagerParams) (Manager, error) {
+	row := q.db.QueryRowContext(ctx, updateManager, arg.ID, arg.Permission)
+	var i Manager
+	err := row.Scan(&i.ID, &i.UsrOpenid, &i.Permission)
+	return i, err
 }

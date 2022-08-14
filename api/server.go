@@ -3,7 +3,6 @@ package api
 import (
 	"fmt"
 	"log"
-	"lost_found/db/sqlc"
 	"lost_found/middleware"
 	"lost_found/middleware/session"
 	"lost_found/middleware/token"
@@ -25,14 +24,14 @@ const (
 
 type Server struct {
 	config         util.Config
-	store          sqlc.Store
+	store          service.Store
 	tokenMaker     token.Maker
 	sessionManager *session.Manager
 	wxMini         *miniprogram.MiniProgram
 	router         *gin.Engine
 }
 
-func NewServer(config util.Config, store sqlc.Store) (*Server, error) {
+func NewServer(config util.Config, store service.Store) (*Server, error) {
 	//令牌maker
 	tokenMaker, err := token.NewJWTMaker(config.TokenSymmetricKey)
 	if err != nil {
@@ -74,6 +73,8 @@ func (server *Server) setupRouter() {
 	authRoutes.GET("/users/found", server.listMyFound)
 	authRoutes.GET("/users/lost", server.listMyLost)
 	authRoutes.GET("/users/match", server.listMyMatch)
+	authRoutes.POST("/users/found/:id", server.completeMyFound) //自己发布的拾取物已归还给失主
+	authRoutes.POST("/users/lost/:id", server.completeMyLost)   //自己发布的遗失物已被寻回
 	//拾取物品
 	authRoutes.GET("/founds", server.listFound)
 	authRoutes.GET("/founds/:id", server.getFound)
@@ -98,16 +99,20 @@ func (server *Server) setupRouter() {
 	manRoutes.GET("/users", server.listUser)
 	manRoutes.POST("/users/add", server.addUser)
 	manRoutes.GET("/users/:id", server.getUser)
-	manRoutes.GET("/users/:query", server.searchUser)
+	manRoutes.GET("/users/some", server.searchUser)
 	manRoutes.DELETE("/users/:id", server.deleteUser)
 	manRoutes.PATCH("/users", server.updateUser)
 	//位置和类型
 	manRoutes.GET("/locations", server.listLocation)
-	manRoutes.POST("/locations/add", server.addLocation)
-	manRoutes.DELETE("/locations/delete/:id", server.deleteLocation)
+	manRoutes.POST("/locations/wide/add", server.addLocationWide)
+	manRoutes.DELETE("/locations/wide/delete/:id", server.deleteLocationWide)
+	manRoutes.POST("/locations/narrow/add", server.addLocationNarrow)
+	manRoutes.DELETE("/locations/narrow/delete/:id", server.deleteLocationNarrow)
 	manRoutes.GET("/types", server.listType)
-	manRoutes.POST("/types/add", server.addType)
-	manRoutes.POST("/types/delete/:id", server.deleteType)
+	manRoutes.POST("/types/wide/add", server.addTypeWide)
+	manRoutes.POST("/types/wide/delete/:id", server.deleteTypeWide)
+	manRoutes.POST("/types/wide/narrow/add", server.addTypeNarrow)
+	manRoutes.POST("/types/wide/narrow/delete/:id", server.deleteTypeNarrow)
 	//拾取物品
 	manRoutes.GET("/founds", server.listFound)
 	manRoutes.GET("/founds/:id", server.getFound)
@@ -133,8 +138,4 @@ func (server *Server) setupRouter() {
 
 func (server *Server) Start(address string) error {
 	return server.router.Run(address)
-}
-
-func errorResponse(err error) gin.H {
-	return gin.H{"error": err.Error()}
 }

@@ -48,11 +48,14 @@ INSERT INTO lost (
     lost_date,
     time_bucket,
     type_id,
+    item_info,
+    image,
+    image_key,
     location_id,
     location_id1,
     location_id2
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
 ) RETURNING *;
 
 -- name: GetLost :one

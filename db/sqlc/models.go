@@ -5,7 +5,6 @@
 package sqlc
 
 import (
-	"database/sql"
 	"fmt"
 	"time"
 )
@@ -176,7 +175,7 @@ type Found struct {
 	LocationStatus LocationStatus `json:"locationStatus"`
 	TypeID         int16          `json:"typeID"`
 	ItemInfo       string         `json:"itemInfo"`
-	Image          string         `json:"image"`
+	Image          []byte         `json:"image"`
 	ImageKey       string         `json:"imageKey"`
 	OwnerInfo      string         `json:"ownerInfo"`
 	AddtionalInfo  string         `json:"addtionalInfo"`
@@ -201,6 +200,9 @@ type Lost struct {
 	LostDate    time.Time  `json:"lostDate"`
 	TimeBucket  TimeBucket `json:"timeBucket"`
 	TypeID      int16      `json:"typeID"`
+	ItemInfo    string     `json:"itemInfo"`
+	Image       []byte     `json:"image"`
+	ImageKey    string     `json:"imageKey"`
 	LocationID  int16      `json:"locationID"`
 	LocationId1 int16      `json:"locationId1"`
 	LocationId2 int16      `json:"locationId2"`
@@ -213,17 +215,17 @@ type Manager struct {
 }
 
 type Match struct {
-	ID           int32          `json:"id"`
-	CreateAt     time.Time      `json:"createAt"`
-	PickerOpenid string         `json:"pickerOpenid"`
-	OwnerOpenid  string         `json:"ownerOpenid"`
-	FoundDate    time.Time      `json:"foundDate"`
-	LostDate     time.Time      `json:"lostDate"`
-	TypeID       int16          `json:"typeID"`
-	ItemInfo     string         `json:"itemInfo"`
-	Image        string         `json:"image"`
-	ImageKey     string         `json:"imageKey"`
-	Comment      sql.NullString `json:"comment"`
+	ID           int32     `json:"id"`
+	CreateAt     time.Time `json:"createAt"`
+	PickerOpenid string    `json:"pickerOpenid"`
+	OwnerOpenid  string    `json:"ownerOpenid"`
+	FoundDate    time.Time `json:"foundDate"`
+	LostDate     time.Time `json:"lostDate"`
+	TypeID       int16     `json:"typeID"`
+	ItemInfo     string    `json:"itemInfo"`
+	Image        []byte    `json:"image"`
+	ImageKey     string    `json:"imageKey"`
+	Comment      string    `json:"comment"`
 }
 
 type TypeNarrow struct {

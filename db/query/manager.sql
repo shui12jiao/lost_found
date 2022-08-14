@@ -15,8 +15,15 @@ SELECT * FROM manager
 WHERE usr_openid = $1 LIMIT 1;
 
 -- name: ListManager :many
-SELECT * FROM manager;
+SELECT * FROM manager
+ORDER BY id;
 
 -- name: DeleteManager :exec
 DELETE FROM manager
 WHERE id = $1;
+
+-- name: UpdateManager :one
+UPDATE manager
+SET permission = $2
+WHERE id = $1
+RETURNING *;
